@@ -1,10 +1,11 @@
-from abc import ABC, abstractmethod
+
 from datetime import datetime
+from abc import ABC, abstractmethod
 from excecoes import SensorInativoError, FalhaLeituraError
 
 
 class Sensor(ABC):
-    '''Classe abstrata que define o comportamento comum dos sensores.'''
+    """Classe abstrata que define o comportamento comum dos sensores."""
 
     def __init__(self, sensor_id, nome, local, unidade, minimo, maximo):
         self.id = sensor_id
@@ -18,31 +19,30 @@ class Sensor(ABC):
 
     @abstractmethod
     def ler(self):
-        '''Obtém uma leitura. Cada sensor implementa sua própria lógica.'''
+        """Obtém uma leitura. Cada sensor implementa sua própria lógica."""
         raise NotImplementedError
 
     def coletar(self):
-        if not self.ativo:
-            raise SensorInativoError(f"O sensor {self.nome} está inativo.")
+        valor = self.ler()
 
-        try:
-            valor = float(self.ler())
-            self.ultima_leitura = {
-                "sensor_id": self.id,
-                "sensor": self.nome,
-                "local": self.local,
-                "tipo": self.tipo,
-                "valor": round(valor, 2),
-                "unidade": self.unidade,
-                "timestamp": datetime.now().isoformat(timespec="seconds")
-            }
-            return self.ultima_leitura
-        except SensorInativoError:
-            raise
-        except Exception as erro:
-            raise FalhaLeituraError(
-                f"Não foi possível ler {self.nome}: {erro}"
-            ) from erro
+        # Sensores numéricos continuam utilizando float.
+        # O sensor de movimento mantém o valor booleano.
+        if not isinstance(valor, bool):
+            valor = float(valor)
+
+        leitura = {
+            "sensor_id": self.id,
+            "sensor": self.nome,
+            "local": self.local,
+            "tipo": self.tipo,
+            "valor": valor,
+            "unidade": self.unidade,
+            "timestamp": datetime.now()
+        }
+
+        self.ultima_leitura = leitura
+
+        return leitura
 
     @property
     def tipo(self):
@@ -60,6 +60,3 @@ class Sensor(ABC):
             "maximo": self.maximo,
             "ultima_leitura": self.ultima_leitura
         }
-
-
-

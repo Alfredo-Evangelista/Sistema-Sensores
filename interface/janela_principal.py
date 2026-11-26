@@ -1,6 +1,4 @@
-
 import tkinter
-
 from .dashboard import Dashboard
 from .sensores_view import SensoresView
 from .localizacoes_view import LocalizacoesView
@@ -10,38 +8,25 @@ from .configuracoes_view import ConfiguracoesView
 
 
 class JanelaPrincipal:
-
-    def __init__(self, central):
-
+    def __init__(self, central, servidor):
         self.central = central
-
+        self.servidor = servidor
         self.janela = tkinter.Tk()
-
         self.janela.title("SenseTrack")
         self.janela.geometry("1100x700")
         self.janela.minsize(850, 550)
         self.janela.configure(bg="#F1F5F9")
-
         self.tela_atual = None
-        self.coleta_agendada = None
-
+        self.atualizacao_agendada = None
         self.criar_layout()
-
         self.mostrar_tela(Dashboard)
-
-        # Primeira coleta
-        self.realizar_coleta()
-
-        # Atualização periódica
-        self.agendar_coleta()
-
+        self.agendar_atualizacao()
         self.janela.protocol(
             "WM_DELETE_WINDOW",
             self.encerrar
         )
 
     def criar_layout(self):
-
         self.menu = tkinter.Frame(
             self.janela,
             bg="#1E293B",
@@ -49,7 +34,6 @@ class JanelaPrincipal:
         )
         self.menu.pack(side="left", fill="y")
         self.menu.pack_propagate(False)
-
         tkinter.Label(
             self.menu,
             text="SenseTrack",
@@ -57,7 +41,6 @@ class JanelaPrincipal:
             fg="white",
             bg="#1E293B"
         ).pack(pady=(30, 5))
-
         tkinter.Label(
             self.menu,
             text="MONITORAMENTO",
@@ -65,7 +48,6 @@ class JanelaPrincipal:
             fg="#94A3B8",
             bg="#1E293B"
         ).pack(pady=(0, 30))
-
         botoes = [
             ("Dashboard", Dashboard),
             ("Sensores", SensoresView),
@@ -76,7 +58,6 @@ class JanelaPrincipal:
         ]
 
         for nome, tela in botoes:
-
             botao = tkinter.Button(
                 self.menu,
                 text=nome,
@@ -92,14 +73,11 @@ class JanelaPrincipal:
                 cursor="hand2",
                 command=lambda t=tela: self.mostrar_tela(t)
             )
-
             botao.pack(fill="x")
 
-        self.conteudo = tkinter.Frame(
-            self.janela,
+        self.conteudo = tkinter.Frame(self.janela,
             bg="#F1F5F9"
         )
-
         self.conteudo.pack(
             side="right",
             fill="both",
@@ -109,59 +87,36 @@ class JanelaPrincipal:
         )
 
     def mostrar_tela(self, tela):
-
         for widget in self.conteudo.winfo_children():
             widget.destroy()
-
         nova_tela = tela(self.conteudo, self.central)
         nova_tela.pack(fill="both", expand=True)
-
         self.tela_atual = nova_tela
-
         self.atualizar_tela()
 
     def atualizar_tela(self):
-
         if self.tela_atual and hasattr(
             self.tela_atual,
             "atualizar"
         ):
             self.tela_atual.atualizar()
 
-    def realizar_coleta(self):
-
-        try:
-            self.central.coletar_todos()
-            self.atualizar_tela()
-
-        except Exception as erro:
-            print(f"Erro durante a coleta: {erro}")
-
-    def agendar_coleta(self):
-
-        intervalo = (
-            self.central.intervalo_coleta_segundos * 1000
+    def agendar_atualizacao(self):
+        self.atualizacao_agendada = self.janela.after(
+            1000,
+            self.executar_atualizacao
         )
 
-        self.coleta_agendada = self.janela.after(
-            intervalo,
-            self.executar_proxima_coleta
-        )
-
-    def executar_proxima_coleta(self):
-
-        self.realizar_coleta()
-        self.agendar_coleta()
+    def executar_atualizacao(self):
+        self.atualizar_tela()
+        self.agendar_atualizacao()
 
     def encerrar(self):
+        if self.atualizacao_agendada:
+            self.janela.after_cancel(self.atualizacao_agendada)
 
-        if self.coleta_agendada:
-            self.janela.after_cancel(
-                self.coleta_agendada
-            )
-
+        self.servidor.parar()
         print("\nMonitoramento encerrado.")
-
         self.janela.destroy()
 
     def iniciar(self):

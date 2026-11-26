@@ -1,12 +1,9 @@
-
 from datetime import datetime
 from abc import ABC, abstractmethod
 from excecoes import SensorInativoError, FalhaLeituraError
 
 
 class Sensor(ABC):
-    """Classe abstrata que define o comportamento comum dos sensores."""
-
     def __init__(self, sensor_id, nome, local, unidade, minimo, maximo):
         self.id = sensor_id
         self.nome = nome
@@ -19,14 +16,11 @@ class Sensor(ABC):
 
     @abstractmethod
     def ler(self):
-        """Obtém uma leitura. Cada sensor implementa sua própria lógica."""
         raise NotImplementedError
 
     def coletar(self):
         valor = self.ler()
 
-        # Sensores numéricos continuam utilizando float.
-        # O sensor de movimento mantém o valor booleano.
         if not isinstance(valor, bool):
             valor = float(valor)
 
@@ -39,9 +33,7 @@ class Sensor(ABC):
             "unidade": self.unidade,
             "timestamp": datetime.now()
         }
-
         self.ultima_leitura = leitura
-
         return leitura
 
     @property

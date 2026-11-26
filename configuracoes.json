@@ -1,7 +1,7 @@
 {
     "intervalo_coleta": 8,
     "temperatura_minima": 20.0,
-    "temperatura_maxima": 25.0,
+    "temperatura_maxima": 23.0,
     "umidade_minima": 40.0,
     "umidade_maxima": 70.0,
     "horario_movimento_inicio": "08:00",

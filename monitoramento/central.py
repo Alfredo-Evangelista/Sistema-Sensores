@@ -1,24 +1,18 @@
-
 import json
 from datetime import datetime
 from pathlib import Path
-
 from sensores.temperatura import SensorTemperatura
 from sensores.umidade import SensorUmidade
 from sensores.movimento import SensorMovimento
 
 
 class CentralMonitoramento:
-
     def __init__(self):
-
         self.arquivo_configuracoes = (
             Path(__file__).resolve().parent.parent
             / "configuracoes.json"
         )
-
         self.configuracoes = self._carregar_configuracoes()
-
         self.sensores = [
             SensorTemperatura(
                 "SALA-T",
@@ -45,13 +39,11 @@ class CentralMonitoramento:
                 1
             )
         ]
-
         self.historico = []
         self.alertas = []
         self.ultima_coleta = None
 
     def _carregar_configuracoes(self):
-
         padrao = {
             "intervalo_coleta": 8,
             "temperatura_minima": 18.0,
@@ -74,19 +66,14 @@ class CentralMonitoramento:
             ) as arquivo:
                 dados = json.load(arquivo)
 
-            # Mantém os valores padrão caso alguma chave esteja ausente.
             padrao.update(dados)
-
         except (json.JSONDecodeError, OSError, TypeError):
             print("Não foi possível carregar as configurações. Usando valores padrão.")
             self._salvar_arquivo_configuracoes(padrao)
-
         return padrao
 
     def _salvar_arquivo_configuracoes(self, configuracoes):
-
-        with open(
-            self.arquivo_configuracoes,
+        with open(self.arquivo_configuracoes,
             "w",
             encoding="utf-8"
         ) as arquivo:
@@ -101,8 +88,7 @@ class CentralMonitoramento:
     def intervalo_coleta_segundos(self):
         return self.configuracoes["intervalo_coleta"]
 
-    def atualizar_configuracoes(
-        self,
+    def atualizar_configuracoes(self,
         temperatura_minima,
         temperatura_maxima,
         umidade_minima,
@@ -111,7 +97,6 @@ class CentralMonitoramento:
         horario_fim,
         intervalo_coleta
     ):
-
         novas_configuracoes = {
             "intervalo_coleta": intervalo_coleta,
             "temperatura_minima": temperatura_minima,
@@ -121,25 +106,18 @@ class CentralMonitoramento:
             "horario_movimento_inicio": horario_inicio,
             "horario_movimento_fim": horario_fim
         }
-
-        # Atualiza os limites dos sensores.
         self.sensores[0].minimo = temperatura_minima
         self.sensores[0].maximo = temperatura_maxima
-
         self.sensores[1].minimo = umidade_minima
         self.sensores[1].maximo = umidade_maxima
-
-        # Atualiza as configurações e salva no JSON.
         self.configuracoes.update(novas_configuracoes)
         self._salvar_arquivo_configuracoes(self.configuracoes)
 
     def _movimento_fora_do_horario(self, timestamp):
-
         horario_inicio = datetime.strptime(
             self.configuracoes["horario_movimento_inicio"],
             "%H:%M"
         ).time()
-
         horario_fim = datetime.strptime(
             self.configuracoes["horario_movimento_fim"],
             "%H:%M"
@@ -147,44 +125,102 @@ class CentralMonitoramento:
 
         horario_atual = timestamp.time()
 
-        # Mesmo horário inicial e final significa dia inteiro permitido.
         if horario_inicio == horario_fim:
             return False
 
-        # Intervalo normal, por exemplo: 07:00 até 22:00.
         if horario_inicio < horario_fim:
             return not (
                 horario_inicio <= horario_atual < horario_fim
             )
 
-        # Intervalo que atravessa a meia-noite, por exemplo: 22:00 até 06:00.
         return not (
             horario_atual >= horario_inicio
             or horario_atual < horario_fim
         )
 
     def _detectar_anomalia(self, sensor, valor, timestamp):
-
         if sensor.tipo == "movimento":
             return (
                 valor is True
                 and self._movimento_fora_do_horario(timestamp)
             )
-
         return valor < sensor.minimo or valor > sensor.maximo
 
-    def coletar_todos(self):
+    def _registrar_leitura(self, sensor, valor, timestamp):
+        leitura = {
+            "sensor_id": sensor.id,
+            "sensor": sensor.nome,
+            "local": sensor.local,
+            "tipo": sensor.tipo,
+            "valor": valor,
+            "unidade": sensor.unidade,
+            "timestamp": timestamp
+        }
+        anomalia = self._detectar_anomalia(
+            sensor,
+            valor,
+            timestamp
+        )
+        leitura["anomalia"] = anomalia
+        sensor.ultima_leitura = leitura
+        self.historico.append(leitura)
 
+        if anomalia:
+            alerta = {
+                "sensor": sensor.nome,
+                "local": sensor.local,
+                "valor": valor,
+                "timestamp": timestamp,
+                "mensagem": (
+                    f"Anomalia detectada no sensor {sensor.nome}"
+                )
+            }
+            self.alertas.append(alerta)
+
+        print(
+            f"{sensor.nome}: {valor} "
+            f"{sensor.unidade} "
+            f"{' - ANOMALIA' if anomalia else ''}"
+        )
+        return leitura
+
+    def receber_leituras(self, dados):
+        timestamp = datetime.now()
+        leituras = []
+
+        valores = [
+            dados["temperatura"],
+            dados["umidade"],
+            dados["movimento"]
+        ]
+
+        for sensor, valor in zip(self.sensores, valores):
+            if sensor.tipo == "movimento":
+                if not isinstance(valor, bool):
+                    raise ValueError("Valor de movimento inválido.")
+            else:
+                if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+                    raise ValueError(f"Valor inválido para {sensor.nome}.")
+                valor = float(valor)
+
+            leitura = self._registrar_leitura(
+                sensor,
+                valor,
+                timestamp
+            )
+            leituras.append(leitura)
+
+        self.ultima_coleta = timestamp
+        return leituras
+
+    def coletar_todos(self):
         leituras = []
         self.ultima_coleta = datetime.now()
 
         for sensor in self.sensores:
-
             leitura = sensor.coletar()
             timestamp = self.ultima_coleta
-
             leitura["timestamp"] = timestamp
-
             anomalia = self._detectar_anomalia(
                 sensor,
                 leitura["valor"],
@@ -192,12 +228,10 @@ class CentralMonitoramento:
             )
 
             leitura["anomalia"] = anomalia
-
             self.historico.append(leitura)
             leituras.append(leitura)
 
             if anomalia:
-
                 alerta = {
                     "sensor": sensor.nome,
                     "local": sensor.local,
@@ -207,7 +241,6 @@ class CentralMonitoramento:
                         f"Anomalia detectada no sensor {sensor.nome}"
                     )
                 }
-
                 self.alertas.append(alerta)
 
             print(
@@ -215,7 +248,6 @@ class CentralMonitoramento:
                 f"{sensor.unidade} "
                 f"{' - ANOMALIA' if anomalia else ''}"
             )
-
         return leituras
 
     def obter_dados_sensores(self):

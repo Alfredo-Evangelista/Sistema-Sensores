@@ -1,6 +1,4 @@
-
 import tkinter
-
 from .componentes import (
     criar_titulo,
     COR_FUNDO,
@@ -13,21 +11,15 @@ from .componentes import (
 
 
 class AlertasView(tkinter.Frame):
-
     def __init__(self, pai, central):
         super().__init__(pai, bg=COR_FUNDO)
-
         self.central = central
-
-        titulo = criar_titulo(
-            self,
+        titulo = criar_titulo(self,
             "Alertas",
             "Eventos e anomalias identificados"
         )
         titulo.pack(fill="x", pady=(0, 25))
-
-        self.lista_alertas = tkinter.Frame(
-            self,
+        self.lista_alertas = tkinter.Frame(self,
             bg=COR_FUNDO
         )
         self.lista_alertas.pack(fill="both", expand=True)
@@ -35,29 +27,24 @@ class AlertasView(tkinter.Frame):
     def atualizar(self):
         for widget in self.lista_alertas.winfo_children():
             widget.destroy()
-
         alertas = self.central.obter_alertas()
 
         if not alertas:
-            tkinter.Label(
-                self.lista_alertas,
+            tkinter.Label(self.lista_alertas,
                 text="Nenhuma anomalia detectada.",
                 font=("Arial", 12),
                 bg=COR_FUNDO,
                 fg=COR_VERDE
             ).pack(anchor="w", pady=10)
-
             return
 
         for alerta in reversed(alertas):
-            card = tkinter.Frame(
-                self.lista_alertas,
+            card = tkinter.Frame(self.lista_alertas,
                 bg=COR_CARD,
                 padx=20,
                 pady=18
             )
             card.pack(fill="x", pady=6)
-
             tkinter.Label(
                 card,
                 text=alerta["mensagem"],
@@ -65,7 +52,6 @@ class AlertasView(tkinter.Frame):
                 bg=COR_CARD,
                 fg=COR_VERMELHO
             ).pack(anchor="w")
-
             tkinter.Label(
                 card,
                 text=(

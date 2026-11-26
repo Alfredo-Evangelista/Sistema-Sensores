@@ -12,7 +12,6 @@ COR_AZUL = "#2563EB"
 
 def criar_titulo(pai, titulo, descricao=""):
     frame = tkinter.Frame(pai, bg=COR_FUNDO)
-
     tkinter.Label(
         frame,
         text=titulo,
@@ -29,9 +28,7 @@ def criar_titulo(pai, titulo, descricao=""):
             fg=COR_SECUNDARIA,
             bg=COR_FUNDO
         ).pack(anchor="w", pady=(5, 0))
-
     return frame
-
 
 def criar_card(pai, titulo, valor, descricao="", cor=COR_AZUL):
     card = tkinter.Frame(
@@ -42,7 +39,6 @@ def criar_card(pai, titulo, valor, descricao="", cor=COR_AZUL):
         highlightbackground="#E2E8F0",
         highlightthickness=1
     )
-
     tkinter.Label(
         card,
         text=titulo,
@@ -50,7 +46,6 @@ def criar_card(pai, titulo, valor, descricao="", cor=COR_AZUL):
         fg=COR_SECUNDARIA,
         bg=COR_CARD
     ).pack(anchor="w")
-
     tkinter.Label(
         card,
         text=valor,
@@ -67,5 +62,4 @@ def criar_card(pai, titulo, valor, descricao="", cor=COR_AZUL):
             fg=COR_SECUNDARIA,
             bg=COR_CARD
         ).pack(anchor="w")
-
     return card

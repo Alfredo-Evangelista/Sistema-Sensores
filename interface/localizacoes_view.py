@@ -1,5 +1,4 @@
 import tkinter
-
 from .componentes import (
     criar_titulo,
     COR_FUNDO,
@@ -11,7 +10,6 @@ from .componentes import (
 
 
 class LocalizacoesView(tkinter.Frame):
-
     def __init__(self, pai, central):
         super().__init__(pai, bg=COR_FUNDO)
         self.central = central
@@ -23,13 +21,11 @@ class LocalizacoesView(tkinter.Frame):
             "Ambientes cadastrados no sistema"
         )
         titulo.pack(fill="x", pady=(0, 25))
-
         ambientes = [
             ("Sala 01", "2 sensores", "Monitorando"),
         ]
 
         for nome, quantidade, estado in ambientes:
-
             card = tkinter.Frame(
                 self,
                 bg=COR_CARD,
@@ -37,7 +33,6 @@ class LocalizacoesView(tkinter.Frame):
                 pady=20
             )
             card.pack(fill="x", pady=6)
-
             tkinter.Label(
                 card,
                 text=nome,
@@ -45,7 +40,6 @@ class LocalizacoesView(tkinter.Frame):
                 bg=COR_CARD,
                 fg=COR_TEXTO
             ).pack(anchor="w")
-
             tkinter.Label(
                 card,
                 text=quantidade,
@@ -53,7 +47,6 @@ class LocalizacoesView(tkinter.Frame):
                 bg=COR_CARD,
                 fg=COR_SECUNDARIA
             ).pack(anchor="w", pady=5)
-
             tkinter.Label(
                 card,
                 text=f"● {estado}",
